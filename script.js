@@ -5,7 +5,9 @@ window.addEventListener('load', () => {
   setTimeout(() => loader.style.display = 'none', 500);
 });
 
-// BLOQUE DE PENSUM (recortado por espacio, ya lo tienes completo en tu versión)
+// ------------------------
+// Bloque de datos del pensum
+// ------------------------
 const pensum = [
   {
     semestre: 1,
@@ -124,10 +126,11 @@ const pensum = [
     ]
   }
 ];
-
+// Aquí va tu array completo con los 10 semestres que ya tienes. No lo repito para ahorrar espacio.
 
 const gridContainer = document.getElementById("grid-container");
 
+// Renderiza los semestres
 pensum.forEach(sem => {
   const semesterWrapper = document.createElement("div");
   semesterWrapper.className = "semester-wrapper";
@@ -142,14 +145,13 @@ pensum.forEach(sem => {
   sem.asignaturas.forEach(asig => {
     const subjectDiv = document.createElement("div");
     subjectDiv.className = "subject";
+    subjectDiv.setAttribute("data-codigo", asig.codigo); // para tareas y notas
     subjectDiv.innerHTML = `
       <strong>${asig.codigo}</strong><br>
       ${asig.nombre}<br>
       <span>${asig.creditos} créditos</span>
     `;
-    subjectDiv.title = asig.prerrequisitos
-      ? `Prerrequisitos: ${asig.prerrequisitos}`
-      : "Sin prerrequisitos";
+    subjectDiv.title = asig.prerrequisitos ? `Prerrequisitos: ${asig.prerrequisitos}` : "Sin prerrequisitos";
     semesterDiv.appendChild(subjectDiv);
   });
 
@@ -157,19 +159,25 @@ pensum.forEach(sem => {
   gridContainer.appendChild(semesterWrapper);
 });
 
-// Marcar o desmarcar materias
+// ------------------------
+// Función: marcar materia como completada
+// ------------------------
 document.addEventListener("click", function (e) {
-  if (e.target.closest(".subject")) {
-    e.target.closest(".subject").classList.toggle("completed");
-    updateProgress();
+  const subject = e.target.closest(".subject");
+  if (subject) {
+    subject.classList.toggle("completed");
+    updateProgressBar();
   }
 });
 
-// MODAL DE TAREAS
+// ------------------------
+// Modal de tareas y notas
+// ------------------------
 const modal = document.getElementById("taskModal");
 const closeModalBtn = document.querySelector(".close-button");
 const taskInput = document.getElementById("taskInput");
 const dateInput = document.getElementById("dateInput");
+const noteInput = document.getElementById("noteInput");
 const saveTaskBtn = document.getElementById("saveTask");
 const taskList = document.getElementById("taskList");
 const modalTitle = document.getElementById("modal-title");
@@ -180,22 +188,22 @@ document.addEventListener("dblclick", (e) => {
   const subjectEl = e.target.closest(".subject");
   if (!subjectEl) return;
 
-  currentSubject = subjectEl.querySelector("strong").textContent;
+  currentSubject = subjectEl.getAttribute("data-codigo");
   modalTitle.textContent = `Tareas - ${currentSubject}`;
   taskInput.value = "";
   dateInput.value = "";
+  noteInput.value = "";
+
   showTasks();
   modal.style.display = "block";
 });
 
 closeModalBtn.onclick = () => modal.style.display = "none";
+window.onclick = (e) => { if (e.target === modal) modal.style.display = "none"; };
 
-window.onclick = (event) => {
-  if (event.target === modal) {
-    modal.style.display = "none";
-  }
-};
-
+// ------------------------
+// Guardar tarea
+// ------------------------
 saveTaskBtn.onclick = () => {
   if (!currentSubject) return;
 
@@ -203,128 +211,99 @@ saveTaskBtn.onclick = () => {
   tasks.push({
     descripcion: taskInput.value,
     fecha: dateInput.value,
-    completada: false
+    nota: noteInput.value
   });
   localStorage.setItem(currentSubject, JSON.stringify(tasks));
   showTasks();
   taskInput.value = "";
   dateInput.value = "";
+  noteInput.value = "";
 };
 
-// Mostrar tareas en el modal
+// ------------------------
+// Mostrar tareas
+// ------------------------
 function showTasks() {
   taskList.innerHTML = "";
   const tasks = JSON.parse(localStorage.getItem(currentSubject)) || [];
-
   tasks.forEach((task, index) => {
     const li = document.createElement("li");
     li.innerHTML = `
-      <span class="${task.completada ? 'completed' : ''}">${task.descripcion} (📅 ${task.fecha})</span>
-      <div>
-        <button onclick="toggleTask('${currentSubject}', ${index})">✔</button>
-        <button onclick="deleteTask('${currentSubject}', ${index})">🗑️</button>
-      </div>
+      <span>${task.descripcion} 📅 ${task.fecha} ${task.nota ? "📝 " + task.nota : ""}</span>
+      <button onclick="toggleComplete('${currentSubject}', ${index})">✔</button>
+      <button onclick="deleteTask('${currentSubject}', ${index})">🗑️</button>
     `;
+    if (task.completada) li.classList.add("completed");
     taskList.appendChild(li);
   });
+
+  renderCalendar(); // actualiza calendario
 }
 
+// ------------------------
 // Marcar tarea como completada
-window.toggleTask = function (subject, index) {
-  const tasks = JSON.parse(localStorage.getItem(subject)) || [];
-  tasks[index].completada = !tasks[index].completada;
-  localStorage.setItem(subject, JSON.stringify(tasks));
+// ------------------------
+function toggleComplete(subjectCode, taskIndex) {
+  const tasks = JSON.parse(localStorage.getItem(subjectCode)) || [];
+  tasks[taskIndex].completada = !tasks[taskIndex].completada;
+  localStorage.setItem(subjectCode, JSON.stringify(tasks));
   showTasks();
-};
-
-// Eliminar tarea
-window.deleteTask = function (subject, index) {
-  const tasks = JSON.parse(localStorage.getItem(subject)) || [];
-  tasks.splice(index, 1);
-  localStorage.setItem(subject, JSON.stringify(tasks));
-  showTasks();
-};
-
-// 🔎 BUSCADOR
-const searchInput = document.getElementById("searchInput");
-if (searchInput) {
-  searchInput.addEventListener("input", function () {
-    const query = this.value.toLowerCase();
-    document.querySelectorAll(".subject").forEach(subject => {
-      const text = subject.innerText.toLowerCase();
-      subject.style.display = text.includes(query) ? "block" : "none";
-    });
-  });
 }
 
-// 📊 BARRA DE PROGRESO
-function updateProgress() {
+// ------------------------
+// Eliminar tarea
+// ------------------------
+function deleteTask(subjectCode, taskIndex) {
+  const tasks = JSON.parse(localStorage.getItem(subjectCode)) || [];
+  tasks.splice(taskIndex, 1);
+  localStorage.setItem(subjectCode, JSON.stringify(tasks));
+  showTasks();
+}
+
+// ------------------------
+// Buscador de materias
+// ------------------------
+document.getElementById("searchInput").addEventListener("input", function () {
+  const query = this.value.toLowerCase();
+  document.querySelectorAll(".subject").forEach(subject => {
+    const text = subject.textContent.toLowerCase();
+    subject.style.display = text.includes(query) ? "block" : "none";
+  });
+});
+
+// ------------------------
+// Barra de progreso
+// ------------------------
+function updateProgressBar() {
   const total = document.querySelectorAll(".subject").length;
   const completed = document.querySelectorAll(".subject.completed").length;
   const percent = Math.round((completed / total) * 100);
   const bar = document.getElementById("progress-bar");
   const label = document.getElementById("progress-label");
-
-  if (bar) bar.style.width = `${percent}%`;
-  if (label) label.textContent = `Progreso: ${percent}%`;
-}
-updateProgress();
-
-// 📅 CALENDARIO DE TAREAS
-const showCalendarBtn = document.getElementById("showCalendar");
-const calendarModal = document.getElementById("calendarModal");
-const closeCalendar = document.querySelector(".close-calendar");
-const calendarContent = document.getElementById("calendarContent");
-
-if (showCalendarBtn) {
-  showCalendarBtn.onclick = () => {
-    calendarModal.style.display = "block";
-    renderCalendar();
-  };
-}
-if (closeCalendar) {
-  closeCalendar.onclick = () => calendarModal.style.display = "none";
-}
-window.onclick = (event) => {
-  if (event.target === calendarModal) calendarModal.style.display = "none";
-};
-
-// Mostrar calendario
-function renderCalendar() {
-  calendarContent.innerHTML = "";
-  for (let key in localStorage) {
-    if (key.startsWith("MVA") || key.startsWith("CAA") || key.startsWith("CBA") || key.startsWith("FLA")) {
-      const tasks = JSON.parse(localStorage.getItem(key)) || [];
-      tasks.forEach(task => {
-        const p = document.createElement("p");
-        p.innerHTML = `<strong>${key}</strong>: ${task.descripcion} - 📅 ${task.fecha}`;
-        calendarContent.appendChild(p);
-      });
-    }
+  if (bar && label) {
+    bar.style.width = `${percent}%`;
+    label.textContent = `${percent}% completado`;
   }
 }
+updateProgressBar();
 
-// 🗑️ LIMPIAR TODO
-const clearBtn = document.getElementById("clearAll");
-if (clearBtn) {
-  clearBtn.onclick = () => {
-    if (confirm("¿Estás seguro de que deseas borrar todo el progreso y tareas?")) {
-      localStorage.clear();
-      document.querySelectorAll(".subject").forEach(s => s.classList.remove("completed"));
-      updateProgress();
-    }
-  };
+// ------------------------
+// Calendario de fechas de entrega
+// ------------------------
+function renderCalendar() {
+  const calendar = document.getElementById("calendar");
+  if (!calendar) return;
+  calendar.innerHTML = "";
+
+  for (const [subjectCode, tasks] of Object.entries(localStorage)) {
+    const parsed = JSON.parse(tasks);
+    parsed.forEach(task => {
+      if (task.fecha) {
+        const entry = document.createElement("div");
+        entry.className = "calendar-entry";
+        entry.innerHTML = `<strong>${subjectCode}</strong>: ${task.descripcion} <em>(${task.fecha})</em>`;
+        calendar.appendChild(entry);
+      }
+    });
+  }
 }
-
-// 📝 NOTAS POR MATERIA
-document.querySelectorAll(".subject").forEach(subject => {
-  subject.addEventListener("contextmenu", e => {
-    e.preventDefault();
-    const codigo = subject.querySelector("strong").textContent;
-    const nota = prompt("Escribe una nota personal para esta materia:");
-    if (nota !== null) {
-      localStorage.setItem(`nota-${codigo}`, nota);
-      alert("Nota guardada.");
-    }
-  });
-});
