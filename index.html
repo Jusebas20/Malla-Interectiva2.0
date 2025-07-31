@@ -2,29 +2,53 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Malla Interactiva - Ciencias Agrarias / Veterinaria</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Malla Interactiva 2.0</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
+  <!-- Loader -->
   <div id="loader">
-    <img src="https://i.pinimg.com/originals/f1/b8/37/f1b8371044025cc40121a52c003b66db.png" alt="Cargando...">
+    <img src="https://cdn-icons-png.flaticon.com/512/616/616408.png" alt="Cargando..." />
   </div>
 
-  <h1>Malla Curricular Interactiva</h1>
+  <!-- Barra de progreso -->
+  <div id="progress-container">
+    <div id="progress-bar"></div>
+    <span id="progress-label">0% completado</span>
+  </div>
+
+  <!-- Buscador de materias -->
+  <div style="text-align:center; margin: 1rem 0;">
+    <input type="text" id="searchInput" placeholder="Buscar materia..." />
+  </div>
+
+  <!-- Contenedor de la malla -->
   <div id="grid-container"></div>
 
+  <!-- Calendario de tareas -->
+  <div class="calendar-section">
+    <h2 style="text-align:center;">📅 Fechas de entrega</h2>
+    <div id="calendar" class="calendar-box"></div>
+  </div>
+
+  <!-- Modal para tareas -->
   <div id="taskModal" class="modal">
     <div class="modal-content">
       <span class="close-button">&times;</span>
       <h2 id="modal-title">Tareas</h2>
+
       <input type="text" id="taskInput" placeholder="Descripción de la tarea" />
       <input type="date" id="dateInput" />
+      <input type="text" id="noteInput" placeholder="Nota o comentario personal" />
+      
       <button id="saveTask">Guardar tarea</button>
       <ul id="taskList"></ul>
     </div>
   </div>
 
+  <!-- Script principal -->
   <script src="script.js"></script>
 </body>
 </html>
